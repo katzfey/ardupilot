@@ -75,12 +75,12 @@ const uint16_t srxlCRCTable[] =
 /// PUBLIC VARIABLES ///
 
 SrxlChannelData srxlChData = {0, 0, 0, {0}};
-SrxlTelemetryData srxlTelemData = {0};
+SrxlTelemetryData srxlTelemData;
 SrxlVtxData srxlVtxData = {0, 0, 1, 0, 0, 1};
 
 /// LOCAL VARIABLES ///
 
-static SrxlDevice srxlThisDev = {0};
+static SrxlDevice srxlThisDev = {{0}};
 static SrxlBus srxlBus[SRXL_NUM_OF_BUSES];
 static bool srxlChDataIsFailsafe = false;
 static bool srxlTelemetryPhase = false;
@@ -88,7 +88,7 @@ static bool srxlTelemetryPhase = false;
 static uint32_t srxlFailsafeChMask = 0;  // Tracks all active channels for use during failsafe transmission
 #endif
 static SrxlBindData srxlBindInfo = {0, 0, 0, 0};
-static SrxlReceiverStats srxlRx = {0};
+static SrxlReceiverStats srxlRx;
 static uint16_t srxlTelemSuppressCount = 0;
 
 #ifdef SRXL_INCLUDE_FWD_PGM_CODE
@@ -1304,7 +1304,7 @@ void srxlOnFrameError(uint8_t busIndex)
 
 SrxlFullID srxlGetTelemetryEndpoint(void)
 {
-    SrxlFullID retVal = {0};
+    SrxlFullID retVal = {{0}};
     if(srxlRx.pTelemRcvr)
     {
         retVal.deviceID = srxlRx.pTelemRcvr->deviceID;
