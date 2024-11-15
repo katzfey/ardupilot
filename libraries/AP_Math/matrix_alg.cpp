@@ -470,6 +470,8 @@ template bool mat_inverse<float>(const float x[], float y[], uint16_t dim);
 template void mat_mul<float>(const float *A, const float *B, float *C, uint16_t n);
 template void mat_identity<float>(float x[], uint16_t dim);
 
+#if HAL_HAVE_HARDWARE_DOUBLE
 template bool mat_inverse<double>(const double x[], double y[], uint16_t dim);
 template void mat_mul<double>(const double *A, const double *B, double *C, uint16_t n);
 template void mat_identity<double>(double x[], uint16_t dim);
+#endif

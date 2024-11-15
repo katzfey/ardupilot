@@ -630,7 +630,9 @@ bool Vector3<T>::segment_plane_intersect(const Vector3<T>& seg_start, const Vect
 
 // define for float and double
 template class Vector3<float>;
+#if HAL_HAVE_HARDWARE_DOUBLE
 template class Vector3<double>;
+#endif
 
 // define needed ops for Vector3l, Vector3i as needed
 template Vector3<int32_t> &Vector3<int32_t>::operator +=(const Vector3<int32_t> &v);

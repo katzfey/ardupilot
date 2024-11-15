@@ -827,4 +827,6 @@ T QuaternionT<T>::roll_pitch_difference(const QuaternionT<T> &v) const
 
 // define for float and double
 template class QuaternionT<float>;
+#if HAL_HAVE_HARDWARE_DOUBLE
 template class QuaternionT<double>;
+#endif

@@ -450,7 +450,9 @@ void Vector2<T>::rotate(T angle_rad)
 
 // define for float and double
 template class Vector2<float>;
+#if HAL_HAVE_HARDWARE_DOUBLE
 template class Vector2<double>;
+#endif
 
 // define some ops for int and long
 template bool Vector2<long>::operator ==(const Vector2<long> &v) const;
