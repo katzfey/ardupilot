@@ -102,13 +102,16 @@
   barometer list
  */
 #define HAL_BARO_PROBE_LIST \
-    probe_i2c_dev(AP_Baro_ICP101XX::probe, 2, 0x63);
+    probe_i2c_dev(AP_Baro_ICP101XX::probe, 2, 0x63); \
+    probe_i2c_dev(AP_Baro_DPS310::probe, 2, 0x77);
 
 /*
   IMU list
  */
 #define PROBE_IMU_SPI(driver, devname, args ...) ADD_BACKEND(AP_InertialSensor_ ## driver::probe(*this,hal.spi->get_device(devname),##args))
-#define HAL_INS_PROBE_LIST PROBE_IMU_SPI(Invensensev3, "INV3", ROTATION_NONE)
+#define HAL_INS_PROBE_LIST \
+    PROBE_IMU_SPI(Invensensev3, "INV3", ROTATION_NONE); \
+    PROBE_IMU_SPI(BMI270, "INV3", ROTATION_NONE)
 
 /*
   bring in missing standard library functions
