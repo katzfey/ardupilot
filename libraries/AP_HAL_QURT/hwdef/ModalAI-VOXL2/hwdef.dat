@@ -1,0 +1,21 @@
+# SPI devices
+#           NAME
+QURT_SPIDEV "INV3"
+
+#  compass list
+#       Driver   Bus+Addr   External Rotation
+COMPASS QMC5883L I2C:0:0x0d true     ROTATION_NONE
+
+#  barometer list
+#    Driver   I2C Bus+Addr
+BARO ICP101XX I2C:2:0x63
+
+#  IMU list
+#   Driver       Bus+Addr   Rotation
+IMU Invensensev3 SPI:INV3   ROTATION_NONE
+
+# Use UART device id on apps proc. The device id maps to /dev/ttyHS<id> on the apps processor.
+# For add-on board M0151 UART, for example, the device id is 1
+# SERIAL5_PROTOCOL will define what the port is used for.
+# By default there is no apps proc UART.
+# define APPS_EXTRA_UART 1
