@@ -135,3 +135,30 @@ private:
     uint32_t baudrate;
     uint64_t receive_timestamp_us;
 };
+
+/*
+  subclass for UART communications when UART is on apps processor
+*/
+class QURT::UARTDriver_Remote : public QURT::UARTDriver
+{
+public:
+    UARTDriver_Remote(uint32_t _device_id) : device_id(_device_id) {}
+
+    void _begin(uint32_t b, uint16_t rxS, uint16_t txS) override;
+    bool _write_pending_bytes(void) override;
+
+    // callback for receiving UART data from apps processor
+    static void uart_data_cb(const struct qurt_rpc_msg *msg, void *p);
+
+    uint32_t get_baud_rate() const override
+    {
+        return baudrate;
+    }
+
+private:
+    const uint32_t device_id;
+    bool remote_configured = false;
+    uint32_t baudrate = 0;
+    uint32_t tx_seq = 0;
+    uint32_t rx_seq = 0;
+};

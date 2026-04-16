@@ -138,6 +138,17 @@ extern "C" {
 
 extern "C" int qurt_ardupilot_main(int argc, char* const argv[]);
 
+typedef void (*remote_uart_data_callback_t)(const struct qurt_rpc_msg *msg, void* p);
+
+static remote_uart_data_callback_t remote_uart_cb = nullptr;
+static void *remote_uart_cb_ptr = nullptr;
+
+void register_remote_uart_data_callback(remote_uart_data_callback_t func, void *p)
+{
+    remote_uart_cb = func;
+    remote_uart_cb_ptr = p;
+}
+
 int slpi_link_client_init(void)
 {
     HAP_PRINTF("About to call qurt_ardupilot_main %p", &qurt_ardupilot_main);
@@ -179,6 +190,13 @@ int slpi_link_client_receive(const uint8_t *data, int data_len_in_bytes)
         }
         break;
     }
+    case QURT_MSG_ID_UART_DATA: {
+        if (remote_uart_cb) {
+            remote_uart_cb(msg, remote_uart_cb_ptr);
+        }
+        break;
+    }
+
     default:
         HAP_PRINTF("Got unknown message id %d", msg->msg_id);
         break;

@@ -19,6 +19,8 @@
 #include "protocol.h"
 #include "getifaddrs.h"
 
+#include "RemoteUARTDriver.h"
+
 volatile bool _running = false;
 static bool enable_debug = false;
 static bool enable_remote_debug = false;
@@ -43,7 +45,6 @@ static struct sockaddr_in obd_addr;
 // Ports for external GCS stream
 #define MAVLINK_GCS_UDP_PORT_LOCAL 14558
 #define MAVLINK_GCS_UDP_PORT_REMOTE 14559
-
 
 // directory for logs, parameters, terrain etc
 #define DATA_DIRECTORY "/data/APM"
@@ -74,6 +75,7 @@ static void slpi_init(void);
 
 static uint32_t num_params = 0;
 static uint32_t expected_seq[MAX_MAVLINK_INSTANCES] = {0, 0};
+static RemoteUARTDriver remote_uart;
 
 static void receive_callback(const uint8_t *data, uint32_t length_in_bytes)
 {
@@ -121,6 +123,19 @@ static void receive_callback(const uint8_t *data, uint32_t length_in_bytes)
     case QURT_MSG_ID_REBOOT: {
         printf("Rebooting\n");
         exit(0);
+        break;
+    }
+    case QURT_MSG_ID_UART_CONFIG: {
+        if (msg->data_length != sizeof(struct qurt_uart_config)) {
+            fprintf(stderr, "Remote UART: invalid config message length %u\n", msg->data_length);
+            break;
+        }
+        const auto *cfg = (const struct qurt_uart_config *)msg->data;
+        remote_uart.configure(cfg->baudrate, cfg->device_id);
+        break;
+    }
+    case QURT_MSG_ID_UART_DATA: {
+        remote_uart.write(msg->data, msg->data_length);
         break;
     }
     default:

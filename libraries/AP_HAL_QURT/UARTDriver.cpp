@@ -1,6 +1,7 @@
 
 #include "interface.h"
 #include "UARTDriver.h"
+#include "replace.h"
 #include <AP_Common/ExpandingString.h>
 
 #if HAL_GCS_ENABLED
@@ -297,4 +298,94 @@ uint64_t UARTDriver_Local::receive_time_constraint_us(uint16_t nbytes)
         last_receive_us -= transport_time_us;
     }
     return last_receive_us;
+}
+
+/*
+  methods for UARTDriver_Remote
+*/
+typedef void (*remote_uart_data_callback_t)(const struct qurt_rpc_msg *msg, void *p);
+extern void register_remote_uart_data_callback(remote_uart_data_callback_t func, void *p);
+
+void UARTDriver_Remote::_begin(uint32_t b, uint16_t rxS, uint16_t txS)
+{
+    // allocate buffers before registering the callback so the callback
+    // never sees an unallocated _readbuf
+    UARTDriver::_begin(b, rxS, txS);
+
+    // register callback for receiving data from apps processor
+    register_remote_uart_data_callback(uart_data_cb, (void *)this);
+
+    // send config message to apps processor
+    if (b != 0 && (!remote_configured || baudrate != b)) {
+        WITH_SEMAPHORE(_read_mutex);
+
+        _readbuf.clear();
+
+        struct qurt_rpc_msg msg {};
+        msg.msg_id = QURT_MSG_ID_UART_CONFIG;
+        msg.inst = 0;
+        msg.seq = 0;
+        struct qurt_uart_config cfg { b, device_id };
+        msg.data_length = sizeof(cfg);
+        memcpy(msg.data, &cfg, sizeof(cfg));
+        if (qurt_rpc_send(msg)) {
+            baudrate = b;
+            remote_configured = true;
+        }
+    }
+}
+
+bool UARTDriver_Remote::_write_pending_bytes(void)
+{
+    if (!remote_configured) {
+        return false;
+    }
+
+    WITH_SEMAPHORE(_write_mutex);
+
+    uint32_t available;
+    const uint8_t *ptr = _writebuf.readptr(available);
+    if (ptr == nullptr || available == 0) {
+        return false;
+    }
+
+    struct qurt_rpc_msg msg {};
+    uint16_t n = available;
+    if (n > sizeof(msg.data)) {
+        n = sizeof(msg.data);
+    }
+
+    msg.msg_id = QURT_MSG_ID_UART_DATA;
+    msg.inst = 0;
+    msg.seq = tx_seq++;
+    msg.data_length = n;
+    memcpy(msg.data, ptr, n);
+
+    if (qurt_rpc_send(msg)) {
+        _writebuf.advance(n);
+        return true;
+    }
+    return false;
+}
+
+void UARTDriver_Remote::uart_data_cb(const struct qurt_rpc_msg *msg, void *p)
+{
+    auto *driver = (UARTDriver_Remote *)p;
+    if (msg->seq != driver->rx_seq) {
+        DEV_PRINTF("Remote UART: RX seq mismatch expected=%lu got=%lu len=%u",
+                   (unsigned long)driver->rx_seq,
+                   (unsigned long)msg->seq,
+                   msg->data_length);
+        driver->rx_seq = msg->seq;
+    }
+    WITH_SEMAPHORE(driver->_read_mutex);
+    const uint16_t written = driver->_readbuf.write(msg->data, msg->data_length);
+    if (written != msg->data_length) {
+        DEV_PRINTF("Remote UART: RX buffer dropped %u/%u bytes (space=%u)",
+                   (unsigned)(msg->data_length - written),
+                   (unsigned)msg->data_length,
+                   (unsigned)driver->_readbuf.space());
+    }
+
+    driver->rx_seq++;
 }

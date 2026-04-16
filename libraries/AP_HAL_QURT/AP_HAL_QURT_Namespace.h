@@ -21,6 +21,7 @@ class UARTDriver;
 class UARTDriver_Console;
 class UARTDriver_MAVLinkUDP;
 class UARTDriver_Local;
+class UARTDriver_Remote;
 class UDPDriver;
 class Util;
 class Scheduler;

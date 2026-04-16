@@ -47,8 +47,18 @@ using namespace QURT;
 static UARTDriver_Console consoleDriver;
 static UARTDriver_MAVLinkUDP serial0Driver(0);
 static UARTDriver_MAVLinkUDP serial1Driver(1);
+
+#ifdef APPS_GPS_UART
+static UARTDriver_Remote serial3Driver(APPS_GPS_UART);
+#else
 static UARTDriver_Local serial3Driver(QURT_UART_GPS);
+#endif
+
 static UARTDriver_Local serial4Driver(QURT_UART_RCIN);
+
+#ifdef APPS_EXTRA_UART
+static UARTDriver_Remote serial5Driver(APPS_EXTRA_UART);
+#endif
 
 static SPIDeviceManager spiDeviceManager;
 static AnalogIn analogIn;
@@ -69,7 +79,11 @@ HAL_QURT::HAL_QURT() :
         nullptr,
         &serial3Driver,
         &serial4Driver,
+#ifdef APPS_EXTRA_UART
+        &serial5Driver,
+#else
         nullptr,
+#endif
         nullptr,
         nullptr,
         nullptr,
