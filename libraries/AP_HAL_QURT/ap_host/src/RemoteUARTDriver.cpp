@@ -175,7 +175,7 @@ void RemoteUARTDriver::_recv_loop()
         }
 
         msg.msg_id = QURT_MSG_ID_UART_DATA;
-        msg.inst = 0;
+        msg.inst = _port_id;
         msg.data_length = nread;
         msg.seq = _rx_seq++;
         if (slpi_link_send((const uint8_t *)&msg, nread + QURT_RPC_MSG_HEADER_LEN)) {

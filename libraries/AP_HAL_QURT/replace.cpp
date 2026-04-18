@@ -140,13 +140,19 @@ extern "C" int qurt_ardupilot_main(int argc, char* const argv[]);
 
 typedef void (*remote_uart_data_callback_t)(const struct qurt_rpc_msg *msg, void* p);
 
-static remote_uart_data_callback_t remote_uart_cb = nullptr;
-static void *remote_uart_cb_ptr = nullptr;
+static remote_uart_data_callback_t remote_uart_cb[MAX_REMOTE_UART_INSTANCES];
+static void *remote_uart_cb_ptr[MAX_REMOTE_UART_INSTANCES];
 
-void register_remote_uart_data_callback(remote_uart_data_callback_t func, void *p)
+void register_remote_uart_data_callback(uint8_t port_id,
+                                        remote_uart_data_callback_t func,
+                                        void *p)
 {
-    remote_uart_cb = func;
-    remote_uart_cb_ptr = p;
+    if (port_id >= MAX_REMOTE_UART_INSTANCES) {
+        HAP_PRINTF("Error: Invalid remote uart port_id %u", port_id);
+        return;
+    }
+    remote_uart_cb[port_id] = func;
+    remote_uart_cb_ptr[port_id] = p;
 }
 
 int slpi_link_client_init(void)
@@ -191,8 +197,9 @@ int slpi_link_client_receive(const uint8_t *data, int data_len_in_bytes)
         break;
     }
     case QURT_MSG_ID_UART_DATA: {
-        if (remote_uart_cb) {
-            remote_uart_cb(msg, remote_uart_cb_ptr);
+        // msg->inst carries the tunneled port_id
+        if (msg->inst < MAX_REMOTE_UART_INSTANCES && remote_uart_cb[msg->inst]) {
+            remote_uart_cb[msg->inst](msg, remote_uart_cb_ptr[msg->inst]);
         }
         break;
     }

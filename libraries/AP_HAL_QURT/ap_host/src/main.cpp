@@ -75,7 +75,13 @@ static void slpi_init(void);
 
 static uint32_t num_params = 0;
 static uint32_t expected_seq[MAX_MAVLINK_INSTANCES] = {0, 0};
-static RemoteUARTDriver remote_uart;
+static RemoteUARTDriver remote_uarts[MAX_REMOTE_UART_INSTANCES] = {
+    RemoteUARTDriver(0),
+    RemoteUARTDriver(1),
+    RemoteUARTDriver(2),
+    RemoteUARTDriver(3),
+    RemoteUARTDriver(4),
+};
 
 static void receive_callback(const uint8_t *data, uint32_t length_in_bytes)
 {
@@ -131,11 +137,19 @@ static void receive_callback(const uint8_t *data, uint32_t length_in_bytes)
             break;
         }
         const auto *cfg = (const struct qurt_uart_config *)msg->data;
-        remote_uart.configure(cfg->baudrate, cfg->device_id);
+        if (cfg->port_id >= MAX_REMOTE_UART_INSTANCES) {
+            fprintf(stderr, "Remote UART: invalid config port_id %u\n", cfg->port_id);
+            break;
+        }
+        remote_uarts[cfg->port_id].configure(cfg->baudrate, cfg->device_id);
         break;
     }
     case QURT_MSG_ID_UART_DATA: {
-        remote_uart.write(msg->data, msg->data_length);
+        if (msg->inst >= MAX_REMOTE_UART_INSTANCES) {
+            fprintf(stderr, "Remote UART: invalid data port_id %u\n", msg->inst);
+            break;
+        }
+        remote_uarts[msg->inst].write(msg->data, msg->data_length);
         break;
     }
     default:

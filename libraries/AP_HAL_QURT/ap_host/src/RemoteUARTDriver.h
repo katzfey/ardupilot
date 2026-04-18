@@ -8,10 +8,12 @@
   Generic UART relay driver for the ap_host process.
   The DSP sends a config message containing a baudrate and a device id;
   the device id maps directly to the Linux path "/dev/ttyHS<device_id>".
+  The port_id is echoed back in the encapsulating RPC packet so the DSP
+  can demultiplex data across multiple tunneled ports.
 */
 class RemoteUARTDriver {
 public:
-    RemoteUARTDriver() = default;
+    explicit RemoteUARTDriver(uint8_t port_id) : _port_id(port_id) {}
     ~RemoteUARTDriver();
 
     bool configure(uint32_t baudrate, uint32_t device_id);
@@ -26,6 +28,7 @@ private:
     void _recv_loop();
     static void *_recv_thread_fn(void *arg);
 
+    const uint8_t _port_id;
     char _device_path[32] {};
     uint32_t _device_id = 0;
     int _fd = -1;

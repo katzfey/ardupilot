@@ -14,5 +14,21 @@ BARO DPS310 I2C:2:0x77
 #   Driver Bus+Addr   Rotation
 IMU BMI270 SPI:INV3   ROTATION_NONE
 
-# Use GPS UART device id on apps proc. The device id maps to /dev/ttyHS<id> on the apps processor.
-define APPS_GPS_UART 7
+# VOXL3 has no DSP-local GPS UART; GPS is wired to a UART on the apps
+# processor. Skipping the SERIAL3 DSP driver leaves SERIAL3 unclaimed,
+# and the remote GPS is reached via tunneled remote port 0. SERIAL3's
+# default protocol must also be overridden from GPS to None, otherwise
+# AP_SerialManager's default state[3].protocol=GPS would be matched by
+# find_serial(GPS, 0) before state[5] and point at the dead slot.
+define HAL_NO_DSP_GPS_UART 1
+define DEFAULT_SERIAL3_PROTOCOL -1
+
+# Apps-processor UART device ids for the tunneled remote serial ports.
+# Each maps to /dev/ttyHS<id> on the apps processor. Ports are exposed
+# as SERIAL5..SERIAL9; the user assigns a protocol via SERIALn_PROTOCOL.
+define APPS_REMOTE_UART_0_DEVICE 7
+
+# Default SERIAL5 (remote port 0) to GPS @ 9600. The M10 UBX receiver
+# powers up at 9600; AP_GPS sends its configuration blob at that baud.
+define DEFAULT_SERIAL5_PROTOCOL 5
+define DEFAULT_SERIAL5_BAUD 9
